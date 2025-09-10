@@ -1,0 +1,88 @@
+from collections import deque
+
+def in_bounds(r, c, M, N):
+    return 0 <= r < M and 0 <= c < N
+
+def sofa_problem(M, N, grid):
+    start, end = [], []
+    for r in range(M):
+        for c in range(N):
+            if grid[r][c] == "s":
+                start.append((r, c))
+            elif grid[r][c] == "S":
+                end.append((r, c))
+
+    start.sort()
+    end.sort()
+
+    # Initial orientation
+    if start[0][0] == start[1][0]:
+        start_state = (start[0][0], start[0][1], "H")
+    else:
+        start_state = (start[0][0], start[0][1], "V")
+
+    # Destination orientation
+    if end[0][0] == end[1][0]:
+        end_state = (end[0][0], end[0][1], "H")
+    else:
+        end_state = (end[0][0], end[0][1], "V")
+
+    q = deque([(start_state, 0)])
+    visited = set([start_state])
+
+    while q:
+        (r, c, orient), steps = q.popleft()
+
+        if (r, c, orient) == end_state:
+            return steps
+
+        if orient == "H":
+            cells = [(r, c), (r, c + 1)]
+        else:
+            cells = [(r, c), (r + 1, c)]
+
+        # Move sofa
+        for dr, dc in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
+            new_cells = [(rr + dr, cc + dc) for rr, cc in cells]
+            if all(in_bounds(rr, cc, M, N) and grid[rr][cc] != "H" for rr, cc in new_cells):
+                nr, nc = new_cells[0]
+                state = (nr, nc, orient)
+                if state not in visited:
+                    visited.add(state)
+                    q.append((state, steps + 1))
+
+        # Rotate sofa
+        if orient == "H":
+            if in_bounds(r, c, M, N) and in_bounds(r + 1, c + 1, M, N):
+                if all(grid[rr][cc] != "H" for rr, cc in [(r, c), (r + 1, c), (r, c + 1), (r + 1, c + 1)]):
+                    new_state = (r, c, "V")
+                    if new_state not in visited:
+                        visited.add(new_state)
+                        q.append((new_state, steps + 1))
+            if in_bounds(r, c + 1, M, N) and in_bounds(r + 1, c, M, N):
+                if all(grid[rr][cc] != "H" for rr, cc in [(r, c), (r + 1, c), (r, c + 1), (r + 1, c + 1)]):
+                    new_state = (r, c + 1, "V")
+                    if new_state not in visited:
+                        visited.add(new_state)
+                        q.append((new_state, steps + 1))
+        else:
+            if in_bounds(r + 1, c + 1, M, N):
+                if all(grid[rr][cc] != "H" for rr, cc in [(r, c), (r + 1, c), (r, c + 1), (r + 1, c + 1)]):
+                    new_state = (r, c, "H")
+                    if new_state not in visited:
+                        visited.add(new_state)
+                        q.append((new_state, steps + 1))
+            if in_bounds(r + 1, c + 1, M, N):
+                if all(grid[rr][cc] != "H" for rr, cc in [(r, c), (r + 1, c), (r, c + 1), (r + 1, c + 1)]):
+                    new_state = (r + 1, c, "H")
+                    if new_state not in visited:
+                        visited.add(new_state)
+                        q.append((new_state, steps + 1))
+
+    return "Impossible"
+
+# ---- main ----
+if __name__ == "__main__":
+    M, N = map(int, input().split())
+    grid = [input().split() for _ in range(M)]
+    print(sofa_problem(M, N, grid))
